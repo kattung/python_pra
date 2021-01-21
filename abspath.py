@@ -27,3 +27,7 @@ print "input file and /home => ", os.path.relpath(sys.argv[0], "/home")
 ### it can give you ".."
 print "/home and /home/katriona => ", os.path.relpath("/home", "/home/katriona")
 print "/home/autotest/foo and /home/katriona => ", os.path.relpath("/home/autotest/foo", "/home/katriona")
+
+### get path of running script
+print "\npath of running script: ", os.path.dirname(__file__)
+print "abspath of running script: ", os.path.abspath(os.path.dirname(__file__))
