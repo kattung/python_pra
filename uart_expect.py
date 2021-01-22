@@ -68,7 +68,7 @@ def write_log(string):
 def open_uart():
     global __args
 
-    print("open_uart")
+    pr_info("open_uart")
     ser = serial.Serial(__args.port, baudrate = 115200)
     ser.reset_input_buffer()
     ser.reset_output_buffer()
@@ -78,15 +78,19 @@ def open_uart():
 def close_uart():
     __args.ser.close()
 
-def send_cmd(cmd, expt, timeout):
-    time.sleep(0.01)
+def send_cmd(expt, timeout, cmd = None):
     ser = __args.ser
-    #ser.reset_output_buffer()
+
+    ### add delay to make sure command is send correctly
+    time.sleep(0.01)
     ser.reset_input_buffer()
+    #ser.reset_output_buffer()
+
     uart = fdpexpect.fdspawn(ser.fileno())
-    uart.send(cmd + "\r\n")
+    if type(cmd) is str:
+        uart.send(cmd + "\r\n")
+        pr_debug("send command: %s" % cmd)
     ret = uart.expect([expt, pexpect.TIMEOUT], timeout=timeout)
-    pr_debug("send command: %s" % cmd)
 
     if ret == 0:
         pr_debug("found match: %s" % expt)
@@ -96,7 +100,8 @@ def send_cmd(cmd, expt, timeout):
         write_log(uart.before)
         pr_error("")
         pr_error("Fail to get expected pattern")
-        pr_error("command: %s" % cmd)
+        if cmd:
+            pr_error("command: %s" % cmd)
         pr_err_exit("exptected pattern: %s" % expt)
 
 
@@ -111,7 +116,7 @@ def send_cmd_list(cmd):
             command = item[0]
             expected = item[1]
             timeout = item[2]
-            send_cmd(command, expected, timeout)
+            send_cmd(expected, timeout, command)
 
 
 def run_test():

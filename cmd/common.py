@@ -34,7 +34,8 @@ cmd_booting = [
 
 cmd_ls = [
     ("ls /dev", buildroot_prompt, 3),
-    ("ls /bin", buildroot_prompt, 3),
+    ("ls /bin", "touch", 3),
+    (None, buildroot_prompt, 3),
 ]
 
 cmd_exit_sdrootfs = [
