@@ -12,6 +12,10 @@ import serial
 import pexpect
 from pexpect import fdpexpect
 
+cmd_dir = osp.join(osp.dirname(__file__), "cmd")
+sys.path.append(cmd_dir)
+import common
+
 pr_info = logging.info
 pr_debug = logging.debug
 pr_error = logging.error
@@ -61,8 +65,24 @@ def write_log(string):
     string = re.sub('\a\b\r', '', tmp3)
     __args.out.write(string)
 
+def open_uart():
+    global __args
+
+    print("open_uart")
+    ser = serial.Serial(__args.port, baudrate = 115200)
+    ser.reset_input_buffer()
+    ser.reset_output_buffer()
+    __args.ser = ser
+
+
+def close_uart():
+    __args.ser.close()
+
 def send_cmd(cmd, expt, timeout):
+    time.sleep(0.01)
     ser = __args.ser
+    #ser.reset_output_buffer()
+    ser.reset_input_buffer()
     uart = fdpexpect.fdspawn(ser.fileno())
     uart.send(cmd + "\r\n")
     ret = uart.expect([expt, pexpect.TIMEOUT], timeout=timeout)
@@ -79,16 +99,27 @@ def send_cmd(cmd, expt, timeout):
         pr_error("command: %s" % cmd)
         pr_err_exit("exptected pattern: %s" % expt)
 
-def open_uart():
-    global __args
 
-    print("open_uart")
-    ser = serial.Serial(__args.port, baudrate = 115200, timeout = 1)
-    __args.ser = ser
+def send_cmd_list(cmd):
+    for item in cmd:
+        if type(item) == list:
+            send_cmd_list(item)
+        else:
+            pr_debug("get one command")
+            pr_debug(item)
+
+            command = item[0]
+            expected = item[1]
+            timeout = item[2]
+            send_cmd(command, expected, timeout)
 
 
-def close_uart():
-    __args.ser.close()
+def run_test():
+
+    #cmd = common.cmd_chroot_sd
+    #cmd = common.cmd_exit_sdrootfs
+    cmd = common.cmd_ls
+    send_cmd_list(cmd)
 
 def work():
     global __args
@@ -97,8 +128,9 @@ def work():
     __args.out = output
 
     open_uart()
-    send_cmd("ls /bin", "# ", 3)
-    send_cmd("ls /dev", "abc", 6) ## this will cause timeout
+    #send_cmd("ls /bin", "# ", 3)
+    #send_cmd("ls /dev", "abc", 6) ## this will cause timeout
+    run_test()
     close_uart()
 
     output.close()
